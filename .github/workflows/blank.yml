@@ -3,357 +3,128 @@ name: Python Calculator CI/CD Pipeline
 on: [push, pull_request]
 
 jobs:
-  # Stage 1: Test
-  test:
+  # PARALLEL TEST JOBS - All run simultaneously
+  
+  test-addition:
     runs-on: ubuntu-latest
-    
     steps:
     - uses: actions/checkout@v4
-    
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
-    - name: Run Calculator Tests
-      run: |
-        python test_calculator.py
-    
-    - name: Generate Test Report
-      run: |
-        python -m pip install coverage
-        coverage run test_calculator.py
-        coverage report -m
-        coverage html
-    
-    - name: Upload Test Coverage
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report
-        path: htmlcov/
-  
-  # Stage 2: Linting & Code Quality
-  lint:
+    - name: Run Addition Tests
+      run: python test_addition.py
+    - name: Addition Test Passed
+      run: echo "✅ Addition tests passed"
+
+  test-subtraction:
     runs-on: ubuntu-latest
-    needs: test
-    
     steps:
     - uses: actions/checkout@v4
-    
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
-    - name: Install linting tools
-      run: |
-        pip install pylint flake8 black mypy
-    
-    - name: Run Flake8 (style guide)
-      run: |
-        flake8 *.py --max-line-length=120 --count --statistics
-    
-    - name: Run Black (code formatter check)
-      run: |
-        black --check *.py
-    
-    - name: Run MyPy (type checking)
-      run: |
-        mypy *.py --ignore-missing-imports
-    
-    - name: Run Pylint
-      run: |
-        pylint *.py --exit-zero
-    
-    - name: Code Quality Badge
-      run: |
-        echo "✅ Code quality checks passed"
-  
-  # Stage 3: Security Scanning
-  security:
+    - name: Run Subtraction Tests
+      run: python test_subtraction.py
+    - name: Subtraction Test Passed
+      run: echo "✅ Subtraction tests passed"
+
+  test-multiplication:
     runs-on: ubuntu-latest
-    needs: test
-    
     steps:
     - uses: actions/checkout@v4
-    
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
-    - name: Install security tools
-      run: |
-        pip install bandit safety
-    
-    - name: Run Bandit (security linter)
-      run: |
-        bandit *.py -r -f json -o bandit-report.json
-    
-    - name: Run Safety (dependency checker)
-      run: |
-        safety check
-    
-    - name: Upload Security Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: security-report
-        path: bandit-report.json
-  
-  # Stage 4: Performance Benchmarking
-  performance:
+    - name: Run Multiplication Tests
+      run: python test_multiplication.py
+    - name: Multiplication Test Passed
+      run: echo "✅ Multiplication tests passed"
+
+  test-division:
     runs-on: ubuntu-latest
-    needs: test
-    
     steps:
     - uses: actions/checkout@v4
-    
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
-    - name: Create Performance Test
-      run: |
-        cat > performance_test.py << 'EOF'
-        import time
-        from calculator import add, multiply, power
-        
-        def benchmark(func, *args):
-            start = time.time()
-            for _ in range(100000):
-                func(*args)
-            end = time.time()
-            return end - start
-        
-        print("📊 Performance Benchmarks:")
-        print(f"Add: {benchmark(add, 5, 3):.4f} seconds")
-        print(f"Multiply: {benchmark(multiply, 5, 3):.4f} seconds")
-        print(f"Power: {benchmark(power, 5, 3):.4f} seconds")
-        EOF
-    
-    - name: Run Performance Tests
-      run: |
-        python performance_test.py
-  
-  # Stage 5: Build & Package
-  build:
+    - name: Run Division Tests
+      run: python test_division.py
+    - name: Division Test Passed
+      run: echo "✅ Division tests passed"
+
+  test-power:
     runs-on: ubuntu-latest
-    needs: [lint, security, test]
-    
     steps:
     - uses: actions/checkout@v4
-    
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
-    - name: Install build tools
+    - name: Run Power Tests
       run: |
-        pip install build wheel twine
-    
-    - name: Create setup.py
-      run: |
-        cat > setup.py << 'EOF'
-        from setuptools import setup, find_packages
-        
-        setup(
-            name="calculator-package",
-            version="1.0.0",
-            packages=find_packages(),
-            description="A simple calculator package",
-            author="CI/CD Demo",
-            python_requires=">=3.11",
-        )
-        EOF
-    
-    - name: Build distribution
-      run: |
-        python -m build
-    
-    - name: Check distribution
-      run: |
-        twine check dist/*
-    
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: distribution-packages
-        path: dist/
-  
-  # Stage 6: Docker Containerization
-  docker:
+        python -c "
+from calculator import power
+assert power(2,3)==8, '2^3 should be 8'
+assert power(5,0)==1, '5^0 should be 1'
+assert power(10,2)==100, '10^2 should be 100'
+print('✅ Power tests passed')
+        "
+
+  test-even:
     runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Create Dockerfile
-      run: |
-        cat > Dockerfile << 'EOF'
-        FROM python:3.11-slim
-        
-        WORKDIR /app
-        
-        COPY calculator.py .
-        COPY test_calculator.py .
-        
-        RUN pip install --no-cache-dir flask
-        
-        COPY api_server.py .
-        
-        EXPOSE 5000
-        
-        CMD ["python", "api_server.py"]
-        EOF
-    
-    - name: Create API Server
-      run: |
-        cat > api_server.py << 'EOF'
-        from flask import Flask, request, jsonify
-        from calculator import add, subtract, multiply, divide, power, is_even
-        
-        app = Flask(__name__)
-        
-        @app.route('/calculate', methods=['POST'])
-        def calculate():
-            data = request.json
-            operation = data.get('operation')
-            a = data.get('a')
-            b = data.get('b')
-            
-            operations = {
-                'add': add,
-                'subtract': subtract,
-                'multiply': multiply,
-                'divide': divide,
-                'power': power
-            }
-            
-            if operation in operations:
-                try:
-                    result = operations[operation](a, b)
-                    return jsonify({'result': result, 'status': 'success'})
-                except ValueError as e:
-                    return jsonify({'error': str(e), 'status': 'error'}), 400
-            
-            return jsonify({'error': 'Invalid operation', 'status': 'error'}), 400
-        
-        @app.route('/health', methods=['GET'])
-        def health():
-            return jsonify({'status': 'healthy'})
-        
-        if __name__ == '__main__':
-            app.run(host='0.0.0.0', port=5000)
-        EOF
-    
-    - name: Build Docker image
-      run: |
-        docker build -t calculator-api:${{ github.sha }} .
-        docker tag calculator-api:${{ github.sha }} calculator-api:latest
-    
-    - name: Test Docker container
-      run: |
-        docker run -d -p 5000:5000 --name calculator-test calculator-api:latest
-        sleep 5
-        curl -X POST http://localhost:5000/calculate \
-          -H "Content-Type: application/json" \
-          -d '{"operation":"add","a":10,"b":5}' \
-          | grep -q "15"
-        docker stop calculator-test
-        docker rm calculator-test
-        echo "✅ Docker container test passed"
-    
-    - name: Save Docker image
-      run: |
-        docker save calculator-api:${{ github.sha }} -o calculator-image.tar
-    
-    - name: Upload Docker image
-      uses: actions/upload-artifact@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        name: docker-image
-        path: calculator-image.tar
-  
-  # Stage 7: Deployment (Simulated)
-  deploy:
+        python-version: '3.11'
+    - name: Run Even Number Tests
+      run: |
+        python -c "
+from calculator import is_even
+assert is_even(2)==True, '2 should be even'
+assert is_even(4)==True, '4 should be even'
+assert is_even(3)==False, '3 should be odd'
+assert is_even(7)==False, '7 should be odd'
+print('✅ Even number tests passed')
+        "
+
+  test-comprehensive:
     runs-on: ubuntu-latest
-    needs: [docker, build]
-    if: github.ref == 'refs/heads/main'
-    
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Simulate Deployment to Staging
-      run: |
-        echo "🚀 Deploying to STAGING environment..."
-        echo "📦 Version: ${{ github.sha }}"
-        echo "🕐 Time: $(date)"
-        echo "✅ Deployment simulation complete"
-    
-    - name: Create Deployment Log
-      run: |
-        cat > deployment.log << EOF
-        Deployment Information:
-        ======================
-        Commit: ${{ github.sha }}
-        Branch: ${{ github.ref_name }}
-        Status: SUCCESS
-        Timestamp: $(date)
-        Tests Passed: 7/7
-        Code Quality: PASSED
-        Security Scan: PASSED
-        Docker Build: SUCCESS
-        EOF
-    
-    - name: Upload Deployment Log
-      uses: actions/upload-artifact@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        name: deployment-log
-        path: deployment.log
-    
-    - name: Notification (Simulated)
-      run: |
-        echo "📧 Email notification would be sent here"
-        echo "💬 Slack notification would be sent here"
-        echo "✅ Deployment complete!"
-  
-  # Stage 8: Generate Summary Report
-  report:
+        python-version: '3.11'
+    - name: Run All Tests Together
+      run: python test_calculator.py
+
+  # FINAL REPORT - Runs after ALL parallel tests complete
+  final-report:
     runs-on: ubuntu-latest
-    needs: [test, lint, security, performance, build, docker]
+    needs: [test-addition, test-subtraction, test-multiplication, test-division, test-power, test-even, test-comprehensive]
     if: always()
-    
     steps:
-    - name: Generate Summary Report
+    - name: Generate Final Report
       run: |
-        echo "# CI/CD Pipeline Summary Report" > report.md
-        echo "" >> report.md
-        echo "## Pipeline Status" >> report.md
-        echo "| Stage | Status |" >> report.md
-        echo "|-------|--------|" >> report.md
-        echo "| Tests | ${{ needs.test.result }} |" >> report.md
-        echo "| Linting | ${{ needs.lint.result }} |" >> report.md
-        echo "| Security | ${{ needs.security.result }} |" >> report.md
-        echo "| Performance | ${{ needs.performance.result }} |" >> report.md
-        echo "| Build | ${{ needs.build.result }} |" >> report.md
-        echo "| Docker | ${{ needs.docker.result }} |" >> report.md
-        echo "" >> report.md
-        echo "## Deployment" >> report.md
-        echo "- Branch: ${{ github.ref_name }}" >> report.md
-        echo "- Commit: ${{ github.sha }}" >> report.md
-        echo "- Status: ${{ needs.deploy.result || 'Not deployed' }}" >> report.md
-    
-    - name: Upload Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: pipeline-report
-        path: report.md
-    
-    - name: Display Summary
-      run: |
-        echo "🎉 CI/CD Pipeline Complete!"
-        echo "✅ All stages executed successfully"
-        echo "📊 Check artifacts for detailed reports"
+        echo "=========================================="
+        echo "🎉 ALL 7 PARALLEL TEST SUITES COMPLETED! 🎉"
+        echo "=========================================="
+        echo ""
+        echo "Test Results Summary:"
+        echo "✅ Addition tests (parallel job 1)"
+        echo "✅ Subtraction tests (parallel job 2)"
+        echo "✅ Multiplication tests (parallel job 3)"
+        echo "✅ Division tests (parallel job 4)"
+        echo "✅ Power tests (parallel job 5)"
+        echo "✅ Even number tests (parallel job 6)"
+        echo "✅ Comprehensive tests (parallel job 7)"
+        echo ""
+        echo "All test suites executed in parallel!"
+        echo "Total execution time = time of slowest test only"

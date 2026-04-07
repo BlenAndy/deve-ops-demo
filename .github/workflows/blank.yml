@@ -66,14 +66,7 @@ jobs:
       with:
         python-version: '3.11'
     - name: Run Power Tests
-      run: |
-        python -c "
-from calculator import power
-assert power(2,3)==8, '2^3 should be 8'
-assert power(5,0)==1, '5^0 should be 1'
-assert power(10,2)==100, '10^2 should be 100'
-print('✅ Power tests passed')
-        "
+      run: python -c "from calculator import power; assert power(2,3)==8; assert power(5,0)==1; assert power(10,2)==100; print('✅ Power tests passed')"
 
   test-even:
     runs-on: ubuntu-latest
@@ -84,15 +77,7 @@ print('✅ Power tests passed')
       with:
         python-version: '3.11'
     - name: Run Even Number Tests
-      run: |
-        python -c "
-from calculator import is_even
-assert is_even(2)==True, '2 should be even'
-assert is_even(4)==True, '4 should be even'
-assert is_even(3)==False, '3 should be odd'
-assert is_even(7)==False, '7 should be odd'
-print('✅ Even number tests passed')
-        "
+      run: python -c "from calculator import is_even; assert is_even(2)==True; assert is_even(4)==True; assert is_even(3)==False; assert is_even(7)==False; print('✅ Even number tests passed')"
 
   test-comprehensive:
     runs-on: ubuntu-latest

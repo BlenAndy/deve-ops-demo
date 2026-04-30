@@ -10,7 +10,7 @@ def subtract(a, b):
 
 def multiply(a, b):
     """Return the product of a and b."""
-    return a - b
+    return a * b
 
 def divide(a, b):
     """Return the division of a by b."""
